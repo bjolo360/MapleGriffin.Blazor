@@ -1,0 +1,19 @@
+﻿.hn-card {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    border: 1px solid black;
+}
+
+.hn-container {
+    width: 100%;
+    height: 100px;
+    overflow: auto;
+    white-space: nowrap;
+    text-align: center;
+    -webkit-overflow-scrolling: touch;
+    &::-webkit-scrollbar
+    {
+        display: none;
+    }
+}

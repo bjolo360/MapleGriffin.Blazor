@@ -1,0 +1,121 @@
+﻿@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+@typeparam T 
+
+<div style="width:100%">
+    <div class="oi oi-caret-bottom" style="left:50%"></div>
+</div>
+
+<div class="hn-container" @ref=_container>   
+    @foreach(var entry in entries)
+    {
+        <div class="hn-card" style="width:calc(100% / (@NumberOfVisibleItems - 2))">
+        @if (ItemTemplate != null)
+        {
+            @ItemTemplate(entry)
+        }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment<T>? ItemTemplate { get; set; }
+
+    [Parameter]
+    public int NumberOfVisibleItems { get; set; } = 3;
+
+    [Parameter] 
+    public EventCallback FocusItemChanged { get; set; }
+
+    private ElementReference _container;
+    private IJSObjectReference? _instance;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<HorizontalNav<T>>? _currentComponentReference;
+
+    [Parameter]
+    public HorizontalNavItemsGetItemsDelegate<T>? GetItems { get; set; }
+    private HorizontalNavItemsGetItemsDelegate<T>? _getItems { get; set; }
+
+    public T FocusItem = default;
+    private IList<T> entries = new List<T>();
+    int firstItemIndex = 0;
+    int lastItemIndex = 0;
+    int focusIndex = 0;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshItems();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Initialize the IntersectionObserver
+        if (firstRender)
+        {
+            _module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./_content/MapleGriffin.Blazor/Components/HorizontalNav.razor.js");
+            _currentComponentReference = DotNetObjectReference.Create(this);
+            _instance = await _module.InvokeAsync<IJSObjectReference>("initialize", _container, _currentComponentReference);            
+        }
+    }
+
+    public async Task Refresh()
+    {
+        await RefreshItems();
+        StateHasChanged();
+    }
+
+    private async Task RefreshItems()
+    {
+        if (GetItems != null)
+        {
+            firstItemIndex = -NumberOfVisibleItems / 2;
+            entries = await GetItems(firstItemIndex, NumberOfVisibleItems);
+            focusIndex = entries.Count / 2;
+            FocusItem = entries[entries.Count / 2];
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnScrollLeft()
+    {
+        firstItemIndex --;
+        var newItem = (await GetItems(firstItemIndex, 1)).FirstOrDefault();
+
+        entries.Insert(0, newItem);
+        entries.RemoveAt(entries.Count - 1);
+
+        StateHasChanged();
+        await _instance.InvokeVoidAsync("onNewItemsLeft");
+        FocusItem = entries[focusIndex];
+        await FocusItemChanged.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task IndexChanged(int index)
+    {
+        focusIndex = index;
+        FocusItem = entries[index];
+        await FocusItemChanged.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public async Task OnScrollRight()
+    {
+        firstItemIndex ++;
+        var newItem = (await GetItems(firstItemIndex + NumberOfVisibleItems - 1, 1)).FirstOrDefault();
+
+        entries.Add(newItem);
+        entries.RemoveAt(0);
+
+        StateHasChanged();
+        await _instance.InvokeVoidAsync("onNewItemsRight");
+        FocusItem = entries[focusIndex];
+        await FocusItemChanged.InvokeAsync();
+    }
+
+
+    public delegate Task<IList<T>> HorizontalNavItemsGetItemsDelegate<T>(int fromIndex, int numberOfItems);
+
+}
