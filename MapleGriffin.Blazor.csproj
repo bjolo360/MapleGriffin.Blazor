@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <PackageOutputPath>c:\temp\packages</PackageOutputPath>
     <Version>0.1</Version>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
 
