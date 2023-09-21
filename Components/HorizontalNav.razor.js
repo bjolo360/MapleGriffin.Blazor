@@ -1,6 +1,6 @@
 export function initialize(container, instance) {
 
-    var firstChild = document.querySelector('.c-card')
+    var firstChild = document.querySelector('.hn-card')
 
     if (firstChild != null) {
         container.scrollLeft = firstChild.offsetWidth;
@@ -11,7 +11,7 @@ export function initialize(container, instance) {
 
     container.onscroll = async () => {
 
-        var firstChild = document.querySelector('.c-card');
+        var firstChild = document.querySelector('.hn-card');
         var width = firstChild.offsetWidth;
         let middle = container.offsetWidth / 2;
         var idx = Math.floor((container.scrollLeft + middle) / firstChild.offsetWidth);
